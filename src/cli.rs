@@ -82,6 +82,12 @@ pub enum Commands {
         base: Option<String>,
     },
 
+    /// Run parallel AI agents across multiple worktrees
+    Fleet {
+        #[command(subcommand)]
+        cmd: FleetCmd,
+    },
+
     /// Start an MCP server exposing workz tools to AI agents (stdio transport)
     Mcp,
 
@@ -109,6 +115,45 @@ pub enum AiTool {
     Codex,
     Gemini,
     Windsurf,
+}
+
+#[derive(Subcommand)]
+pub enum FleetCmd {
+    /// Create worktrees and launch an AI agent for each task in parallel
+    Start {
+        /// Task description (repeat for multiple tasks: --task "..." --task "...")
+        #[arg(long = "task", action = clap::ArgAction::Append)]
+        tasks: Vec<String>,
+
+        /// Load tasks from a file (one task per non-empty line)
+        #[arg(long)]
+        from: Option<std::path::PathBuf>,
+
+        /// AI agent to launch for every task
+        #[arg(long, default_value = "claude", value_enum)]
+        agent: AiTool,
+
+        /// Base branch to create all worktrees from
+        #[arg(long)]
+        base: Option<String>,
+    },
+
+    /// Show status of all fleet worktrees
+    Status,
+
+    /// Run a shell command in every fleet worktree in parallel
+    Run {
+        /// Command to execute (e.g. "cargo test")
+        #[arg(required = true, trailing_var_arg = true)]
+        cmd: Vec<String>,
+    },
+
+    /// Remove all fleet worktrees and clean up
+    Done {
+        /// Force removal even with uncommitted changes
+        #[arg(short, long)]
+        force: bool,
+    },
 }
 
 impl std::fmt::Display for AiTool {

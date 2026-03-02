@@ -7,7 +7,7 @@
 
 ## shipped
 
-### v0.2 (current)
+### v0.2
 - [x] Skim fuzzy TUI (`workz switch`)
 - [x] Global config (`~/.config/workz/config.toml`)
 - [x] Smart project detection (Node/Rust/Python/Go/Java)
@@ -18,27 +18,20 @@
 - [x] `workz sync` for existing worktrees
 - [x] Lifecycle hooks (`post_start`, `pre_done`)
 
+### v0.3
+- [x] IDE config sync — auto-symlink `.vscode/`, `.idea/`, `.cursor/`, `.claude/`, `.zed/`
+- [x] `workz status` — rich per-worktree dashboard (branch, dirty, last commit age)
+- [x] `workz clean --merged` — auto-prune worktrees whose branches are merged
+- [x] More AI launchers — Aider, Codex CLI, Gemini CLI, Windsurf
+
+### v0.4
+- [x] `workz mcp` — stdio MCP server exposing 6 tools for AI agents
+- [x] `CLAUDE.md` — Claude Code auto-discovers workz tools
+- [x] Published to crates.io, Homebrew, awesome-mcp-servers
+
 ---
 
 ## upcoming
-
-### v0.3 — quick wins (1-2 weeks)
-Low effort, high signal. Ship fast to generate content for launch posts.
-
-- [ ] IDE config sync — auto-copy `.vscode/`, `.idea/`, `.cursor/`, `.claude/` into new worktrees
-- [ ] `workz status` — rich per-worktree dashboard (branch, dirty, last commit age, disk, Docker state)
-- [ ] `workz clean --merged` — auto-prune worktrees whose branches are merged to base
-- [ ] More AI launchers — add Aider, Codex CLI, Gemini CLI, Windsurf to `--ai-tool`
-- [ ] Submodule support — auto `git submodule update --init --recursive` on start
-- [ ] `workz config` — print resolved config for debugging
-
-### v0.4 — MCP server (2-3 weeks) ← strategic priority #1
-Makes workz discoverable and usable by AI agents themselves. First mover in the ecosystem.
-
-- [ ] `workz mcp` — stdio MCP server exposing all workz operations as tools
-  - `workz_start`, `workz_list`, `workz_switch`, `workz_sync`, `workz_status`, `workz_done`, `workz_conflict_check`
-- [ ] `CLAUDE.md` / `SKILL.md` — Claude Code discovers workz without any setup
-- [ ] Publish to MCP registry / Claude Code integrations page
 
 ### v0.5 — fleet mode (3-4 weeks) ← HN launch moment
 Turns workz into an agent orchestration platform. The killer differentiator vs all competitors.
@@ -50,7 +43,17 @@ Turns workz into an agent orchestration platform. The killer differentiator vs a
 - [ ] `workz fleet done` — teardown everything
 - [ ] Task file support — `workz fleet start --from tasks.md`
 
-### v0.6 — environment isolation (3-4 weeks)
+### v0.6 — web dashboard / workz serve (3-4 weeks) ← workz.dev product
+Visual layer on top of the CLI. Turns workz into a Conductor competitor, but browser-based and cross-platform.
+
+- [ ] `workz serve` — spin up local web dashboard at `localhost:7777`
+- [ ] Worktree cards — branch, dirty/clean, last commit, disk usage, Docker state
+- [ ] Agent status — which worktrees have AI agents running
+- [ ] Conflict heatmap — visual diff of files modified across worktrees
+- [ ] One-click actions — open in terminal / VS Code / Cursor, sync, done
+- [ ] workz.dev — landing page + docs site backed by this UI
+
+### v0.7 — environment isolation (3-4 weeks)
 The unsolved problem. Code isolation ≠ environment isolation.
 
 - [ ] `--isolated` flag — auto-assign unique PORT, DB_NAME, REDIS_URL per worktree
@@ -59,7 +62,7 @@ The unsolved problem. Code isolation ≠ environment isolation.
 - [ ] Resource cleanup — `workz done` releases ports, stops containers, optionally drops DB
 - [ ] DB name injection — auto-suffix `DB_NAME` with sanitized branch name in .env
 
-### v0.7 — GitHub integration
+### v0.8 — GitHub integration
 - [ ] `workz pr` — push + create PR from current worktree
 - [ ] `workz done --pr` — create PR + cleanup in one shot
 - [ ] `workz review <PR#>` — fetch PR into worktree, sync deps, open editor
@@ -80,10 +83,11 @@ The unsolved problem. Code isolation ≠ environment isolation.
 
 | Phase | Action | Channel |
 |-------|--------|---------|
-| v0.3 | Blog: *"I replaced 50 lines of bash with workz start --ai"* | Dev.to, Reddit |
-| v0.4 | Blog: *"AI agents that manage their own worktrees"* | r/ClaudeAI, r/cursor, HN |
+| ✅ v0.3 | Blog: *"I replaced 50 lines of bash with workz start --ai"* | Dev.to, Reddit |
+| ✅ v0.4 | Blog: *"AI agents that manage their own worktrees"* | r/ClaudeAI, r/cursor, HN |
 | v0.5 | **HN Launch: "Show HN: workz — run 5 AI agents in parallel"** | Hacker News |
-| v0.6 | Blog: *"The git worktree tools landscape in 2026"* | Dev.to, Reddit |
+| v0.6 | Launch workz.dev dashboard — Conductor killer | Product Hunt |
+| v0.7 | Blog: *"The git worktree tools landscape in 2026"* | Dev.to, Reddit |
 
 ## competitive position
 

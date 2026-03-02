@@ -1,12 +1,13 @@
 mod cli;
 mod config;
+mod fleet;
 mod git;
 mod mcp;
 mod sync;
 
 use anyhow::{bail, Result};
 use clap::Parser;
-use cli::{AiTool, Commands, Shell};
+use cli::{AiTool, Commands, FleetCmd, Shell};
 use skim::prelude::*;
 use std::io::Cursor;
 use std::process::Command;
@@ -36,6 +37,18 @@ fn main() -> Result<()> {
         Commands::Sync => cmd_sync(),
         Commands::Status => cmd_status(),
         Commands::Clean { merged, base } => cmd_clean(merged, base.as_deref()),
+        Commands::Fleet { cmd } => match cmd {
+            FleetCmd::Start { mut tasks, from, agent, base } => {
+                if let Some(path) = from {
+                    let mut file_tasks = fleet::parse_task_file(&path)?;
+                    tasks.append(&mut file_tasks);
+                }
+                fleet::cmd_start(tasks, &agent, base.as_deref())
+            }
+            FleetCmd::Status => fleet::cmd_status(),
+            FleetCmd::Run { cmd } => fleet::cmd_run(&cmd),
+            FleetCmd::Done { force } => fleet::cmd_done(force),
+        },
         Commands::Mcp => mcp::run(),
         Commands::Init { shell } => cmd_init(&shell),
     }
