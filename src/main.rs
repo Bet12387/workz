@@ -5,6 +5,7 @@ mod git;
 mod mcp;
 mod serve;
 mod sync;
+mod tui;
 
 use anyhow::{bail, Result};
 use clap::Parser;
@@ -49,6 +50,8 @@ fn main() -> Result<()> {
             FleetCmd::Status => fleet::cmd_status(),
             FleetCmd::Run { cmd } => fleet::cmd_run(&cmd),
             FleetCmd::Done { force } => fleet::cmd_done(force),
+            FleetCmd::Merge { base, squash, all } => fleet::cmd_merge(base.as_deref(), squash, all),
+            FleetCmd::Pr { base, draft, all } => fleet::cmd_pr(base.as_deref(), draft, all),
         },
         Commands::Serve { port, no_open } => serve::run(port, no_open),
         Commands::Mcp => mcp::run(),

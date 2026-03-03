@@ -165,6 +165,36 @@ pub enum FleetCmd {
         #[arg(short, long)]
         force: bool,
     },
+
+    /// Interactively merge completed fleet worktrees into the base branch
+    Merge {
+        /// Base branch to merge into (defaults to main or master)
+        #[arg(long)]
+        base: Option<String>,
+
+        /// Squash all commits per worktree into one merge commit
+        #[arg(long)]
+        squash: bool,
+
+        /// Merge all worktrees without interactive selection
+        #[arg(long)]
+        all: bool,
+    },
+
+    /// Create a GitHub PR for each fleet worktree
+    Pr {
+        /// Base branch for the PRs (defaults to main or master)
+        #[arg(long)]
+        base: Option<String>,
+
+        /// Create as draft PRs
+        #[arg(long)]
+        draft: bool,
+
+        /// Create PRs for all worktrees without interactive selection
+        #[arg(long)]
+        all: bool,
+    },
 }
 
 impl std::fmt::Display for AiTool {

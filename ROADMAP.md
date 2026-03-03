@@ -33,25 +33,27 @@
 
 ## upcoming
 
-### v0.5 — fleet mode (3-4 weeks) ← HN launch moment
+### v0.5 — fleet mode ← HN launch moment
 Turns workz into an agent orchestration platform. The killer differentiator vs all competitors.
 
-- [ ] `workz fleet start --task "..." --task "..." --agent claude` — parallel agent launcher
-- [ ] `workz fleet status` — ratatui TUI dashboard (worktree, task, agent, status)
-- [ ] `workz fleet merge` — interactive merge of completed worktrees
-- [ ] `workz fleet pr` — create PR per worktree
-- [ ] `workz fleet done` — teardown everything
-- [ ] Task file support — `workz fleet start --from tasks.md`
+- [x] `workz fleet start --task "..." --task "..." --agent claude` — parallel agent launcher
+- [x] `workz fleet status` — per-worktree status (branch, dirty, last commit)
+- [x] `workz fleet run "cmd"` — run command across all fleet worktrees in parallel
+- [x] `workz fleet merge` — interactive merge of completed worktrees (skim multi-select)
+- [x] `workz fleet pr` — create PR per worktree via `gh`
+- [x] `workz fleet done` — teardown everything
+- [x] Task file support — `workz fleet start --from tasks.md`
+- [x] `workz fleet status` — ratatui TUI live dashboard (worktree, task, agent PID, status)
 
-### v0.6 — web dashboard / workz serve (3-4 weeks) ← workz.dev product
+### v0.6 — web dashboard / workz serve ← workz.dev product
 Visual layer on top of the CLI. Turns workz into a Conductor competitor, but browser-based and cross-platform.
 
-- [ ] `workz serve` — spin up local web dashboard at `localhost:7777`
-- [ ] Worktree cards — branch, dirty/clean, last commit, disk usage, Docker state
-- [ ] Agent status — which worktrees have AI agents running
+- [x] `workz serve` — local web dashboard at `localhost:7777`
+- [x] Worktree cards — branch, dirty/clean, last commit, disk usage, Docker state
+- [x] One-click actions — open in VS Code / Cursor, sync, remove
+- [ ] Agent status — which worktrees have AI agents running (detect by process)
 - [ ] Conflict heatmap — visual diff of files modified across worktrees
-- [ ] One-click actions — open in terminal / VS Code / Cursor, sync, done
-- [ ] workz.dev — landing page + docs site backed by this UI
+- [ ] workz.dev — landing page + docs site
 
 ### v0.7 — environment isolation (3-4 weeks)
 The unsolved problem. Code isolation ≠ environment isolation.

@@ -4,6 +4,8 @@
 
 ![workz demo](demo.gif)
 
+> **What you're seeing:** `workz start` syncs deps in one shot → `workz fleet start` launches 3 Claude agents in parallel → `workz fleet status` shows a live ratatui TUI with agent PIDs, dirty files, and last commits → `workz fleet merge` brings it all back to main.
+
 Git worktrees let you work on multiple branches simultaneously, but they leave behind your `.env` files and force you to re-install `node_modules` every time. **workz** fixes this automatically.
 
 ## The Problem
@@ -231,6 +233,55 @@ workz start feature/test --ai --ai-tool codex        # launches OpenAI Codex CLI
 workz start feature/x --ai --ai-tool gemini          # launches Gemini CLI
 workz start feature/y --ai --ai-tool windsurf        # launches Windsurf
 ```
+
+## Fleet Mode
+
+Fleet mode orchestrates parallel AI agents across isolated worktrees in a single command.
+
+```bash
+# Spin up 3 Claude agents working in parallel
+workz fleet start \
+  --task "add user authentication" \
+  --task "write integration tests" \
+  --task "refactor database layer" \
+  --agent claude
+
+# Watch all agents live — ratatui TUI with agent PIDs, dirty files, last commits
+workz fleet status
+
+# Run a command across all fleet worktrees simultaneously
+workz fleet run "cargo test"
+
+# Merge completed work back to main interactively
+workz fleet merge
+
+# Or open a PR for each worktree
+workz fleet pr --draft
+
+# Tear it all down
+workz fleet done
+```
+
+`workz fleet status` opens a live terminal dashboard (auto-refreshes every 2s):
+
+```
+╭─ workz fleet ───────────────────────────────────── refreshed 0s ago ─╮
+│  BRANCH                         TASK                  STATUS   AGENT  │
+│  ──────────────────────────────────────────────────────────────────── │
+│▶ fleet/add-user-authentication  add user authentication  ● run 45823  │
+│  fleet/write-integration-tests  write integration tests  ● run 45867  │
+│  fleet/refactor-database-layer  refactor database layer  ● run 45901  │
+│                                                                        │
+│  fleet/add-user-authentication                                         │
+│  task    add user authentication                                       │
+│  status  ● running  (agent pid 45823)                                  │
+│  dirty   3 modified files                                              │
+│  commit  a3b7c2d  "feat: add JWT middleware"  2 min ago                │
+╰────────────────── q quit  r refresh  ↑↓ navigate ─────────────────────╯
+```
+
+Keys: `↑↓` / `jk` to navigate, `r` to force refresh, `q` / `Esc` to quit.
+Piping (`workz fleet status | grep running`) falls back to plain-text output automatically.
 
 ## MCP Server
 

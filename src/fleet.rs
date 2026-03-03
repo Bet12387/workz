@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use skim::prelude::*;
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -197,6 +199,12 @@ pub fn cmd_status() -> Result<()> {
         return Ok(());
     }
 
+    // Launch the live TUI when running interactively; plain text for pipes/scripts
+    use std::io::IsTerminal;
+    if std::io::stdout().is_terminal() {
+        return crate::tui::run_tui(state);
+    }
+
     println!("fleet status  (agent: {})", state.agent);
     println!();
 
@@ -320,5 +328,292 @@ pub fn cmd_done(force: bool) -> Result<()> {
 
     clear_state(&root);
     println!("fleet done!");
+    Ok(())
+}
+
+// ── fleet merge ─────────────────────────────────────────────────────────
+
+pub fn cmd_merge(base: Option<&str>, squash: bool, all: bool) -> Result<()> {
+    let root = git::repo_root()?;
+    let state = load_state(&root)?;
+
+    if state.tasks.is_empty() {
+        println!("fleet is empty");
+        return Ok(());
+    }
+
+    let base_branch = base
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| state.base.clone().unwrap_or_else(git::default_branch));
+
+    let root_branch = git::current_branch(&root).unwrap_or_else(|_| base_branch.clone());
+
+    // Build candidate list with ahead count
+    struct Candidate {
+        ft: FleetTask,
+        ahead: u32,
+        is_dirty: bool,
+    }
+
+    let mut candidates: Vec<Candidate> = Vec::new();
+    for ft in &state.tasks {
+        let wt_path = PathBuf::from(&ft.path);
+        if !wt_path.exists() {
+            eprintln!("  warning: worktree '{}' not found, skipping", ft.branch);
+            continue;
+        }
+        let ahead = git::commits_ahead(&root, &base_branch, &ft.branch).unwrap_or(0);
+        let is_dirty = git::is_dirty(&wt_path).unwrap_or(false);
+        candidates.push(Candidate { ft: ft.clone(), ahead, is_dirty });
+    }
+
+    if candidates.is_empty() {
+        println!("no fleet worktrees available");
+        return Ok(());
+    }
+
+    println!("merging into: {}", root_branch);
+    println!();
+
+    let selected_branches: Vec<String> = if all {
+        candidates.iter().map(|c| c.ft.branch.clone()).collect()
+    } else {
+        let lines: Vec<String> = candidates.iter().map(|c| {
+            let ahead_str = match c.ahead {
+                0 => "no commits ahead".to_string(),
+                1 => "1 commit ahead".to_string(),
+                n => format!("{} commits ahead", n),
+            };
+            let dirty = if c.is_dirty { "  [modified]" } else { "" };
+            format!("{}\t{}{}\t({})", c.ft.branch, c.ft.task, dirty, ahead_str)
+        }).collect();
+
+        let input = lines.join("\n");
+        let options = SkimOptionsBuilder::default()
+            .height(Some("50%"))
+            .multi(true)
+            .reverse(true)
+            .prompt(Some("select branches to merge (TAB=select, ENTER=confirm)> "))
+            .build()
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        let item_reader = SkimItemReader::default();
+        let items = item_reader.of_bufread(Cursor::new(input));
+        let output = Skim::run_with(&options, Some(items));
+
+        match output {
+            Some(out) if !out.is_abort && !out.selected_items.is_empty() => out
+                .selected_items
+                .iter()
+                .map(|item| {
+                    item.output()
+                        .split('\t')
+                        .next()
+                        .unwrap_or("")
+                        .to_string()
+                })
+                .collect(),
+            _ => {
+                println!("cancelled");
+                return Ok(());
+            }
+        }
+    };
+
+    if selected_branches.is_empty() {
+        println!("nothing selected");
+        return Ok(());
+    }
+
+    let mode = if squash { "squash" } else { "no-ff" };
+    println!(
+        "merging {} branch{} (--{})...",
+        selected_branches.len(),
+        if selected_branches.len() == 1 { "" } else { "es" },
+        mode
+    );
+    println!();
+
+    let mut merged = 0usize;
+    for branch in &selected_branches {
+        print!("  {} ... ", branch);
+        match git::merge_branch(&root, branch, squash) {
+            Ok(_) => {
+                if squash {
+                    let task_msg = state
+                        .tasks
+                        .iter()
+                        .find(|t| &t.branch == branch)
+                        .map(|t| t.task.clone())
+                        .unwrap_or_else(|| branch.clone());
+                    match git::commit_with_message(&root, &task_msg) {
+                        Ok(_) => {
+                            println!("merged (squashed)");
+                            merged += 1;
+                        }
+                        Err(e) => {
+                            let msg = e.to_string();
+                            if msg.contains("nothing to commit") || msg.contains("nothing added") {
+                                println!("nothing to merge (already up to date)");
+                            } else {
+                                println!("merge ok, commit failed: {}", e);
+                            }
+                        }
+                    }
+                } else {
+                    println!("merged");
+                    merged += 1;
+                }
+            }
+            Err(e) => {
+                println!("CONFLICT");
+                eprintln!("    {}", e.to_string().lines().next().unwrap_or(""));
+                eprintln!("    resolve conflicts, then run: git commit");
+                eprintln!("    re-run 'workz fleet merge' for remaining branches");
+                break;
+            }
+        }
+    }
+
+    println!();
+    println!("{}/{} branch{} merged", merged, selected_branches.len(),
+        if selected_branches.len() == 1 { "" } else { "es" });
+    Ok(())
+}
+
+// ── fleet pr ────────────────────────────────────────────────────────────
+
+pub fn cmd_pr(base: Option<&str>, draft: bool, all: bool) -> Result<()> {
+    if !which_exists("gh") {
+        anyhow::bail!("'gh' (GitHub CLI) not found — install it with: brew install gh");
+    }
+
+    let root = git::repo_root()?;
+    let state = load_state(&root)?;
+
+    if state.tasks.is_empty() {
+        println!("fleet is empty");
+        return Ok(());
+    }
+
+    let base_branch = base
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| state.base.clone().unwrap_or_else(git::default_branch));
+
+    let candidates: Vec<&FleetTask> = state
+        .tasks
+        .iter()
+        .filter(|ft| PathBuf::from(&ft.path).exists())
+        .collect();
+
+    if candidates.is_empty() {
+        println!("no fleet worktrees available");
+        return Ok(());
+    }
+
+    let selected: Vec<&FleetTask> = if all {
+        candidates
+    } else {
+        let lines: Vec<String> = candidates
+            .iter()
+            .map(|ft| format!("{}\t{}", ft.branch, ft.task))
+            .collect();
+
+        let input = lines.join("\n");
+        let options = SkimOptionsBuilder::default()
+            .height(Some("50%"))
+            .multi(true)
+            .reverse(true)
+            .prompt(Some("select branches to open PRs for (TAB=select, ENTER=confirm)> "))
+            .build()
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+        let item_reader = SkimItemReader::default();
+        let items = item_reader.of_bufread(Cursor::new(input));
+        let output = Skim::run_with(&options, Some(items));
+
+        let selected_branches: Vec<String> = match output {
+            Some(out) if !out.is_abort && !out.selected_items.is_empty() => out
+                .selected_items
+                .iter()
+                .map(|item| {
+                    item.output()
+                        .split('\t')
+                        .next()
+                        .unwrap_or("")
+                        .to_string()
+                })
+                .collect(),
+            _ => {
+                println!("cancelled");
+                return Ok(());
+            }
+        };
+
+        candidates
+            .into_iter()
+            .filter(|ft| selected_branches.contains(&ft.branch))
+            .collect()
+    };
+
+    if selected.is_empty() {
+        println!("nothing selected");
+        return Ok(());
+    }
+
+    let draft_str = if draft { " (draft)" } else { "" };
+    println!(
+        "creating {} PR{}{} against {}...",
+        selected.len(),
+        if selected.len() == 1 { "" } else { "s" },
+        draft_str,
+        base_branch
+    );
+    println!();
+
+    for ft in &selected {
+        print!("  {} ... pushing... ", ft.branch);
+
+        if let Err(e) = git::push_branch(&root, &ft.branch) {
+            println!("push failed: {}", e.to_string().lines().next().unwrap_or(""));
+            continue;
+        }
+
+        print!("creating PR... ");
+
+        let body = format!(
+            "## Task\n\n{}\n\n---\n*Created by [workz](https://github.com/rohansx/workz) fleet*",
+            ft.task
+        );
+        let base_str = base_branch.as_str();
+        let title_str = ft.task.as_str();
+        let body_str = body.as_str();
+
+        let mut args: Vec<&str> = vec![
+            "pr", "create",
+            "--base", base_str,
+            "--head", &ft.branch,
+            "--title", title_str,
+            "--body", body_str,
+        ];
+        if draft {
+            args.push("--draft");
+        }
+
+        let output = Command::new("gh").args(&args).current_dir(&root).output();
+
+        match output {
+            Ok(out) if out.status.success() => {
+                let url = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                println!("{}", url);
+            }
+            Ok(out) => {
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                println!("failed: {}", stderr.trim());
+            }
+            Err(e) => println!("error: {}", e),
+        }
+    }
+
     Ok(())
 }
