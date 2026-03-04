@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 
-use crate::{config, git, sync};
+use crate::{config, git, isolation, sync};
 
 // ── JSON-RPC types ──────────────────────────────────────────────────────
 
@@ -140,6 +140,7 @@ fn call_tool(name: &str, args: &Value) -> Result<String> {
                 .ok_or_else(|| anyhow::anyhow!("branch is required"))?;
             let base = args["base"].as_str();
             let no_sync = args["no_sync"].as_bool().unwrap_or(false);
+            let isolated = args["isolated"].as_bool().unwrap_or(false);
 
             let root = git::repo_root()?;
             let wt_path = git::worktree_path(&root, branch);
@@ -151,17 +152,34 @@ fn call_tool(name: &str, args: &Value) -> Result<String> {
                 ));
             }
 
+            let config = config::load_config(&root)?;
             git::worktree_add(&wt_path, branch, base)?;
 
-            if !no_sync {
-                let config = config::load_config(&root)?;
-                sync::sync_worktree(&root, &wt_path, &config.sync)?;
-            }
+            let framework = if !no_sync {
+                sync::sync_worktree(&root, &wt_path, &config.sync)?
+            } else {
+                sync::Framework::Unknown
+            };
 
-            Ok(format!(
+            let mut result = format!(
                 "worktree created\nbranch: {branch}\npath: {}",
                 wt_path.display()
-            ))
+            );
+
+            if isolated {
+                let iso = isolation::setup_isolation(
+                    branch,
+                    &wt_path,
+                    config.isolation.port_range_size,
+                    framework,
+                )?;
+                result.push_str(&format!(
+                    "\nisolated: PORT={}-{} DB_NAME={} COMPOSE_PROJECT_NAME={}",
+                    iso.port, iso.port_end, iso.db_name, iso.compose_project
+                ));
+            }
+
+            Ok(result)
         }
 
         "workz_list" => {
@@ -217,7 +235,7 @@ fn call_tool(name: &str, args: &Value) -> Result<String> {
                 anyhow::bail!("cannot sync the main worktree");
             }
             let config = config::load_config(&root)?;
-            sync::sync_worktree(&root, &path, &config.sync)?;
+            let _framework = sync::sync_worktree(&root, &path, &config.sync)?;
             Ok(format!("synced worktree at {}", path.display()))
         }
 
@@ -285,7 +303,8 @@ fn tool_definitions() -> Value {
                 "properties": {
                     "branch": { "type": "string", "description": "Branch name to create or checkout (created from base if it doesn't exist)" },
                     "base":   { "type": "string", "description": "Base branch to create from (defaults to HEAD)" },
-                    "no_sync":{ "type": "boolean","description": "Skip symlink/env sync (faster, for bare clones)" }
+                    "no_sync":{ "type": "boolean","description": "Skip symlink/env sync (faster, for bare clones)" },
+                    "isolated":{ "type": "boolean","description": "Auto-assign PORT range, DB_NAME, COMPOSE_PROJECT_NAME and write .env.local" }
                 },
                 "required": ["branch"]
             }

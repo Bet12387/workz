@@ -140,7 +140,7 @@ pub fn cmd_start(
     println!("\nsyncing dependencies...");
     for (i, (ft, wt_path)) in created.iter().enumerate() {
         print!("  [{}/{}] {}... ", i + 1, n, ft.branch);
-        sync::sync_worktree(&root, wt_path, &config.sync)?;
+        let _framework = sync::sync_worktree(&root, wt_path, &config.sync)?;
         println!("done");
     }
 

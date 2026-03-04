@@ -87,9 +87,10 @@ fn cmd_start(
     git::worktree_add(&wt_path, branch, base)?;
     println!("  worktree created at {}", wt_path.display());
 
-    if !no_sync {
-        let config = config::load_config(&root)?;
-        sync::sync_worktree(&root, &wt_path, &config.sync)?;
+    let config = config::load_config(&root)?;
+
+    let framework = if !no_sync {
+        let fw = sync::sync_worktree(&root, &wt_path, &config.sync)?;
 
         // Run post_start hook if configured
         if let Some(hook) = &config.hooks.post_start {
@@ -102,15 +103,29 @@ fn cmd_start(
                 eprintln!("  warning: post_start hook exited with {}", status);
             }
         }
-    }
+        fw
+    } else {
+        sync::Framework::Unknown
+    };
 
     if isolated {
-        let iso = isolation::setup_isolation(branch, &wt_path)?;
+        let iso = isolation::setup_isolation(
+            branch,
+            &wt_path,
+            config.isolation.port_range_size,
+            framework,
+        )?;
         println!("  isolated environment:");
-        println!("    PORT={}                 → .env.local", iso.port);
+        if iso.port_count > 1 {
+            println!("    PORT={}..{}            → .env.local", iso.port, iso.port_end);
+        } else {
+            println!("    PORT={}                 → .env.local", iso.port);
+        }
         println!("    DB_NAME={}", iso.db_name);
         println!("    COMPOSE_PROJECT_NAME={}", iso.compose_project);
-        println!("    REDIS_URL=redis://localhost:{}", iso.port + 1000);
+        if framework != sync::Framework::Unknown {
+            println!("    framework={:?}", framework);
+        }
     }
 
     if docker {
@@ -428,7 +443,7 @@ fn cmd_sync() -> Result<()> {
 
     let config = config::load_config(&root)?;
     println!("syncing worktree at {}", cwd.display());
-    sync::sync_worktree(&root, &cwd, &config.sync)?;
+    let _framework = sync::sync_worktree(&root, &cwd, &config.sync)?;
     println!("done!");
     Ok(())
 }
@@ -464,7 +479,13 @@ fn cmd_status() -> Result<()> {
         let docker = if has_compose { "  [docker]" } else { "" };
 
         let port_info = isolation::get_allocation(&wt.branch)
-            .map(|a| format!("  PORT:{}", a.port))
+            .map(|a| {
+                if a.port_count > 1 {
+                    format!("  PORT:{}-{}", a.port, a.port + a.port_count - 1)
+                } else {
+                    format!("  PORT:{}", a.port)
+                }
+            })
             .unwrap_or_default();
 
         println!(

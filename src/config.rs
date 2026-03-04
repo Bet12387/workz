@@ -10,6 +10,8 @@ pub struct Config {
     pub sync: SyncConfig,
     #[serde(default)]
     pub hooks: HooksConfig,
+    #[serde(default)]
+    pub isolation: IsolationConfig,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,6 +38,29 @@ pub struct HooksConfig {
     /// Shell command to run before worktree removal
     #[serde(default)]
     pub pre_done: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct IsolationConfig {
+    /// Number of ports to allocate per worktree (default: 10)
+    #[serde(default = "default_port_range_size")]
+    pub port_range_size: u16,
+
+    /// Base port for first worktree (default: 3000)
+    #[serde(default = "default_base_port")]
+    pub base_port: u16,
+}
+
+fn default_port_range_size() -> u16 { 10 }
+fn default_base_port() -> u16 { 3000 }
+
+impl Default for IsolationConfig {
+    fn default() -> Self {
+        Self {
+            port_range_size: default_port_range_size(),
+            base_port: default_base_port(),
+        }
+    }
 }
 
 fn default_symlink_dirs() -> Vec<String> {
@@ -171,5 +196,14 @@ fn merge_configs(global: Config, project: Config) -> Config {
         pre_done: project.hooks.pre_done.or(global.hooks.pre_done),
     };
 
-    Config { sync, hooks }
+    let default_iso = IsolationConfig::default();
+    let isolation = if project.isolation.port_range_size != default_iso.port_range_size
+        || project.isolation.base_port != default_iso.base_port
+    {
+        project.isolation
+    } else {
+        global.isolation
+    };
+
+    Config { sync, hooks, isolation }
 }

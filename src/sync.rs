@@ -3,13 +3,40 @@ use std::path::Path;
 
 use crate::config::SyncConfig;
 
+/// Detected web framework — used by isolation to write framework-specific env vars.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Framework {
+    #[default]
+    Unknown,
+    // Node.js
+    NextJs,
+    Vite,
+    Express,
+    NestJs,
+    Nuxt,
+    SvelteKit,
+    // Python
+    Django,
+    Flask,
+    FastApi,
+    // Java/Kotlin
+    SpringBoot,
+    // Ruby
+    Rails,
+    // Elixir
+    Phoenix,
+    // Go (generic web)
+    GoGeneric,
+}
+
 /// Sync a worktree: symlink heavy directories, copy env files, and auto-install deps.
-pub fn sync_worktree(source: &Path, target: &Path, config: &SyncConfig) -> Result<()> {
+/// Returns the detected web framework for use by isolation.
+pub fn sync_worktree(source: &Path, target: &Path, config: &SyncConfig) -> Result<Framework> {
     let project = detect_project(source);
     symlink_dirs(source, target, &config.symlink, &config.ignore, &project)?;
     copy_files(source, target, &config.copy, &config.ignore)?;
     auto_install(source, target, &project)?;
-    Ok(())
+    Ok(project.framework)
 }
 
 /// Detected project types (a repo can be multiple, e.g. Node + Python monorepo).
@@ -20,6 +47,7 @@ struct ProjectInfo {
     has_python: bool,
     has_go: bool,
     has_java: bool,
+    framework: Framework,
     /// Detected package manager command for Node projects.
     node_install_cmd: Option<Vec<String>>,
     /// Detected package manager command for Python projects.
@@ -83,7 +111,89 @@ fn detect_project(root: &Path) -> ProjectInfo {
         info.has_java = true;
     }
 
+    // Framework detection (best-effort, file reads only)
+    info.framework = detect_framework(root, &info);
+
     info
+}
+
+fn detect_framework(root: &Path, info: &ProjectInfo) -> Framework {
+    if info.has_node {
+        if let Some(fw) = detect_node_framework(root) {
+            return fw;
+        }
+    }
+    if info.has_python {
+        if let Some(fw) = detect_python_framework(root) {
+            return fw;
+        }
+    }
+    if info.has_java {
+        if let Some(fw) = detect_java_framework(root) {
+            return fw;
+        }
+    }
+    // Ruby
+    if root.join("Gemfile").exists() {
+        if let Ok(content) = std::fs::read_to_string(root.join("Gemfile")) {
+            if content.contains("'rails'") || content.contains("\"rails\"") {
+                return Framework::Rails;
+            }
+        }
+    }
+    // Elixir
+    if root.join("mix.exs").exists() {
+        if let Ok(content) = std::fs::read_to_string(root.join("mix.exs")) {
+            if content.contains(":phoenix") {
+                return Framework::Phoenix;
+            }
+        }
+    }
+    if info.has_go {
+        return Framework::GoGeneric;
+    }
+    Framework::Unknown
+}
+
+fn detect_node_framework(root: &Path) -> Option<Framework> {
+    let content = std::fs::read_to_string(root.join("package.json")).ok()?;
+    let pkg: serde_json::Value = serde_json::from_str(&content).ok()?;
+
+    let has_dep = |name: &str| -> bool {
+        pkg.get("dependencies").and_then(|d| d.get(name)).is_some()
+            || pkg.get("devDependencies").and_then(|d| d.get(name)).is_some()
+    };
+
+    if has_dep("next") { return Some(Framework::NextJs); }
+    if has_dep("@sveltejs/kit") { return Some(Framework::SvelteKit); }
+    if has_dep("nuxt") || has_dep("nuxt3") { return Some(Framework::Nuxt); }
+    if has_dep("@nestjs/core") { return Some(Framework::NestJs); }
+    if has_dep("vite") { return Some(Framework::Vite); }
+    if has_dep("express") { return Some(Framework::Express); }
+    None
+}
+
+fn detect_python_framework(root: &Path) -> Option<Framework> {
+    for filename in &["pyproject.toml", "requirements.txt", "Pipfile"] {
+        if let Ok(content) = std::fs::read_to_string(root.join(filename)) {
+            let lower = content.to_lowercase();
+            if lower.contains("django") { return Some(Framework::Django); }
+            if lower.contains("fastapi") { return Some(Framework::FastApi); }
+            if lower.contains("flask") { return Some(Framework::Flask); }
+        }
+    }
+    None
+}
+
+fn detect_java_framework(root: &Path) -> Option<Framework> {
+    for filename in &["build.gradle", "build.gradle.kts", "pom.xml"] {
+        if let Ok(content) = std::fs::read_to_string(root.join(filename)) {
+            if content.contains("spring-boot") || content.contains("org.springframework.boot") {
+                return Some(Framework::SpringBoot);
+            }
+        }
+    }
+    None
 }
 
 /// Directories that only matter for specific project types.
