@@ -2,9 +2,7 @@
 
 **Git worktree manager for AI-native development** — auto-synced dependencies, environment isolation, fleet orchestration, and a lazygit-style TUI.
 
-![workz TUI dashboard](demo-tui.gif)
-
-> **What you're seeing:** 4 worktrees, 3 fleet agents running in parallel, modified files tracked per-worktree, and port allocations — all in a single dashboard. `Tab` to switch panels, `j/k` to navigate, `n` to create, `d` to delete.
+![workz CLI demo](demo.gif)
 
 ## The Problem
 
@@ -59,6 +57,8 @@ Run `workz` with no arguments to launch the dashboard:
 ```bash
 workz
 ```
+
+![workz TUI dashboard](demo-tui.gif)
 
 4 panels show everything at a glance:
 
@@ -300,10 +300,6 @@ workz done feature/api             # stops containers + removes worktree
 ```
 
 Supports both `docker compose` and `podman-compose`.
-
-## CLI Demo
-
-![workz CLI demo](demo.gif)
 
 ## Requirements
 
