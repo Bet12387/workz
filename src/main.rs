@@ -21,7 +21,11 @@ const CD_PREFIX: &str = "__workz_cd:";
 fn main() -> Result<()> {
     let cli = cli::Cli::parse();
 
-    match cli.command {
+    let Some(command) = cli.command else {
+        return tui::run_dashboard();
+    };
+
+    match command {
         Commands::Start {
             branch,
             base,

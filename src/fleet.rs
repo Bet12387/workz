@@ -37,6 +37,13 @@ fn load_state(root: &Path) -> Result<FleetState> {
     Ok(serde_json::from_str(&raw)?)
 }
 
+/// Try to load fleet state, returning None if no fleet is active.
+pub fn try_load_state(root: &Path) -> Option<FleetState> {
+    let path = state_path(root);
+    let raw = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&raw).ok()
+}
+
 fn save_state(root: &Path, state: &FleetState) -> Result<()> {
     let dir = root.join(".workz");
     std::fs::create_dir_all(&dir)?;
@@ -199,10 +206,10 @@ pub fn cmd_status() -> Result<()> {
         return Ok(());
     }
 
-    // Launch the live TUI when running interactively; plain text for pipes/scripts
+    // Launch the dashboard TUI when running interactively; plain text for pipes/scripts
     use std::io::IsTerminal;
     if std::io::stdout().is_terminal() {
-        return crate::tui::run_tui(state);
+        return crate::tui::run_dashboard();
     }
 
     println!("fleet status  (agent: {})", state.agent);

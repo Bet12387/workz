@@ -216,6 +216,16 @@ pub fn modified_files(path: &Path) -> Result<Vec<String>> {
         .collect())
 }
 
+/// Like modified_files but preserves the status prefix (M, A, D, ??).
+pub fn modified_files_with_status(path: &Path) -> Result<Vec<(String, String)>> {
+    let output = git_in(path, &["status", "--porcelain"])?;
+    Ok(output
+        .lines()
+        .filter(|l| l.len() > 3)
+        .map(|l| (l[..2].trim().to_string(), l[3..].trim().to_string()))
+        .collect())
+}
+
 /// Count commits in `branch` that are not in `base` (run from root).
 pub fn commits_ahead(root: &Path, base: &str, branch: &str) -> Result<u32> {
     let spec = format!("{}..{}", base, branch);
